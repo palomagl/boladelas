@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from 'react';
-import {CalendarDays,Trophy,Wallet,Users,Home,Plus,Minus,Check,ChevronRight,ArrowLeft,ClipboardPaste,Download,Settings2,Trash2,X,Search,ShieldCheck} from 'lucide-react';
+import {type LucideIcon,CalendarDays,Trophy,Wallet,Users,Home,Plus,Minus,Check,ChevronRight,ArrowLeft,ClipboardPaste,Download,Settings2,Trash2,X,Search,ShieldCheck} from 'lucide-react';
 import {Data,Entry,Round,Player,demo,id,normalize,parseNames,matchPlayer,ranking,stats,money,prettyDate,today} from './model';
 type Tab='home'|'rounds'|'ranking'|'cash'|'players';
 const KEY='boladelas-data-v1';
@@ -12,7 +12,7 @@ export default function App(){
  const rounds=useMemo(()=>data.rounds.filter(r=>r.date.startsWith(String(data.season))).sort((a,b)=>b.date.localeCompare(a.date)),[data]);
  const ranks=useMemo(()=>ranking(data),[data]);
  const totals=stats(rounds),current=data.rounds.find(r=>r.id===active),names=parseNames(list);
- const navigation:[Tab,React.ComponentType<{size?:number}>,string][]=[['home',Home,'Início'],['rounds',CalendarDays,'Rodadas'],['ranking',Trophy,'Ranking'],['cash',Wallet,'Caixa'],['players',Users,'Jogadoras']];
+ const navigation:[Tab,LucideIcon,string][]=[['home',Home,'Início'],['rounds',CalendarDays,'Rodadas'],['ranking',Trophy,'Ranking'],['cash',Wallet,'Caixa'],['players',Users,'Jogadoras']];
  const goto=(key:Tab)=>{setTab(key);setActive(null)};
  const editRound=(rid:string,fn:(r:Round)=>Round)=>setData(d=>({...d,rounds:d.rounds.map(r=>r.id===rid?fn(r):r)}));
  const editEntry=(rid:string,pid:string,patch:Partial<Entry>)=>editRound(rid,r=>({...r,entries:r.entries.map(e=>e.playerId===pid?{...e,...patch}:e)}));
