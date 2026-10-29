@@ -11,3 +11,9 @@
 /* Decorative layers must never intercept taps on the primary action. */
 .hero::after,.home-hero::after{pointer-events:none!important}
 .home-new-game{position:relative;z-index:2;touch-action:manipulation}
+
+/* Evita zoom automático ao focar campos no iPhone e zoom por duplo toque nos controles. */
+@media (max-width: 760px) {
+  input, textarea, select { font-size: 16px !important; }
+  button, a, [role="button"] { touch-action: manipulation; }
+}
