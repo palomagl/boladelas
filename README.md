@@ -13,7 +13,7 @@ npm run build
 npm test
 ```
 
-## Banco de dados — configuração segura (não ativado no app ainda)
+## Banco de dados — configuração segura
 
 1. Crie um projeto no [Supabase](https://supabase.com/dashboard).
 2. Em **SQL Editor**, execute nesta ordem:
@@ -33,7 +33,7 @@ npm test
    Consulte `.env.example` para os nomes.
 7. Faça um novo deploy após ajustar as variáveis.
 
-**Muito importante:** esta etapa só PREPARA o banco e o cliente. O aplicativo atual **ainda usa dados de demonstração no localStorage**. Não interprete a configuração da Vercel como ativação de sincronização. A próxima etapa de desenvolvimento será integrar login, importação inicial com confirmação, persistência remota, erros de rede e sincronização offline. Não comece a operar pagamentos reais antes de testar esse fluxo.
+**Estado atual:** com as variáveis Supabase configuradas, o aplicativo exige login e carrega/grava os registros nas tabelas remotas. Ainda é necessário validar os fluxos reais de criação, atualização e exclusão no Samsung. A sincronização offline confiável não foi implementada; não registre movimentações financeiras reais sem testar recuperação de dados e comportamento de rede.
 
 ### Segurança
 
@@ -51,3 +51,15 @@ npm test
 - `src/lib/supabase.ts` — cliente Supabase preparado, ainda não ligado ao app
 - `supabase/migrations/` — estrutura e regras de acesso
 - `public/` — ícones e PWA
+
+## Usar no celular
+
+1. Acesse o domínio de produção publicado na Vercel e faça login com a conta autorizada no Supabase.
+2. **Início → Novo jogo**: escolha a data e o valor e cole a lista numerada do WhatsApp.
+3. **Rodadas**: abra um jogo já criado e atualize gols, presença e Pix/dinheiro.
+4. **Ranking**: confira os gols acumulados na temporada.
+5. **Caixa**: registre entradas, saídas e consulte pagamentos por rodada. Para saídas funcionar, execute `supabase/migrations/20261103_cash_expenses.sql` no Supabase.
+6. **Jogadoras**: cadastre, corrija apelidos e exclua apenas perfis sem gols ou pagamentos.
+7. Para sair da conta, use o ícone discreto de perfil no cabeçalho; não existe botão flutuante.
+
+Antes de entregar à organizadora, confirme que criar uma rodada fictícia, editar gols e pagamentos e atualizar a página mantém tudo salvo. Confira também se a Vercel mostra o deploy atual como `Ready`.
