@@ -6,7 +6,15 @@ export type CashExtra={id:string;date:string;description:string;amount:number;me
 export type Data={players:Player[];rounds:Round[];season:number;extras?:CashExtra[]};
 export const id=()=>globalThis.crypto?.randomUUID?.()??Math.random().toString(36).slice(2);
 export const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]/g,'');
-export const parseNames=(s:string)=>[...new Map(s.split(/[\n;]+/).map(x=>x.replace(/^\s*(?:\d{1,3}\s*[.)\-:]\s*|[-*•✅☑️]\s*)+/gu,'').replace(/\s*\((?:confirmad[ao]|ok|pago|pix)\)\s*$/iu,'').trim()).filter(Boolean).map(name=>[normalize(name),name] as const)).values()];
+export const parseNames=(source:string)=>[...new Map(source
+ .split(/[\r\n;]+/)
+ .map(line=>line
+   .replace(/^[\s\u200B\uFEFF]*(?:(?:\d{1,3}[\uFE0F\u20E3]?|[\u2776-\u2793])[\s]*[.)\-–—:]?[\s]*|[-*•✅☑️][\s]*)+/gu,'')
+   .replace(/^\s*(?:\d{1,3})\s+(?=\p{L})/u,'')
+   .replace(/\s*\((?:confirmad[ao]|ok|pago|pix)\)\s*$/iu,'')
+   .trim())
+ .filter(Boolean)
+ .map(name=>[normalize(name),name] as const)).values()];
 export const matchPlayer=(name:string,players:Player[])=>players.find(p=>normalize(p.name)===normalize(name)||p.aliases.some(a=>normalize(a)===normalize(name)));
 export const money=(n:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
 export const prettyDate=(s:string)=>new Date(s+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'long'});
