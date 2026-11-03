@@ -15,7 +15,27 @@ export const parseNames=(source:string)=>[...new Map(source
    .trim())
  .filter(Boolean)
  .map(name=>[normalize(name),name] as const)).values()];
-export const matchPlayer=(name:string,players:Player[])=>players.find(p=>normalize(p.name)===normalize(name)||p.aliases.some(a=>normalize(a)===normalize(name)));
+export const cleanPlayerName=(name:string)=>name.trim().replace(/^\\d{1,3}\\s*(?:[.)\\-–—:]\\s*|\\s+)(?=\\p{L})/u,'').trim();
+export const matchPlayer=(name:string,players:Player[])=>{
+ const needle=normalize(cleanPlayerName(name));
+ return players.find(p=>normalize(p.name)===needle||p.aliases.some(a=>normalize(a)===needle))
+   ||players.find(p=>normalize(cleanPlayerName(p.name))===needle||p.aliases.some(a=>normalize(cleanPlayerName(a))===needle));
+};
+export const mergePlayers=(data:Data,sourceId:string,targetId:string):Data=>{
+ if(sourceId===targetId)throw new Error('Escolha duas jogadoras diferentes');
+ const source=data.players.find(p=>p.id===sourceId);
+ const target=data.players.find(p=>p.id===targetId);
+ if(!source||!target)throw new Error('Jogadora não encontrada');
+ // Se ambas estão na mesma rodada, não presumir como unir pagamentos nem gols.
+ if(data.rounds.some(r=>r.entries.some(e=>e.playerId===sourceId)&&r.entries.some(e=>e.playerId===targetId))){
+   throw new Error('As duas jogadoras aparecem na mesma rodada. Confira os gols e pagamentos antes de unir.');
+ }
+ const aliases=[...new Set([...target.aliases,...source.aliases,source.name].filter(a=>normalize(a)!==normalize(target.name)))];
+ return {...data,
+  players:data.players.filter(p=>p.id!==sourceId).map(p=>p.id===targetId?{...p,aliases}:p),
+  rounds:data.rounds.map(r=>({...r,entries:r.entries.map(e=>e.playerId===sourceId?{...e,playerId:targetId}:e)}))
+ };
+};
 export const money=(n:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
 export const prettyDate=(s:string)=>new Date(s+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'long'});
 export const today=()=>new Date().toLocaleDateString('en-CA');
