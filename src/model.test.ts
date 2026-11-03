@@ -2,6 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {parseNames,matchPlayer,ranking,stats,normalize,demo} from './model';
 describe('lista do WhatsApp',()=>{
  it('separa nomes com números e ignora duplicados',()=>expect(parseNames('1. Ana\n2) Bia\n3. Ana')).toEqual(['Ana','Bia']));
+ it('remove numeração de listas copiadas do WhatsApp',()=>expect(parseNames('1. Larissa\n02 - Manuele\n3) Jéssica\n4 Ana\n5️⃣ Bruna')).toEqual(['Larissa','Manuele','Jéssica','Ana','Bruna']));
  it('reconhece apelidos',()=>expect(matchPlayer('Manu',demo.players)?.name).toBe('Manuele'));
  it('ignora diferenças de acento e caixa',()=>expect(normalize('JÉSSICA')).toBe(normalize('jessica')));
 });
