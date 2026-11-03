@@ -13,7 +13,7 @@ export function validateUsername(input:string):string|null{
 export function usernameEmail(input:string):string{
  const name=normalizeUsername(input);
  if(validateUsername(name))throw new Error('Nome de usuário inválido');
- return name+'@acesso.boladelas.invalid';
+ return name+'@acesso.boladelas.example.com';
 }
 export function loginIdentifier(input:string):string{
  const v=input.trim();
