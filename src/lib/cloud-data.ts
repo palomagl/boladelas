@@ -27,7 +27,7 @@ export async function loadCloudData(owner:string):Promise<Data>{
    playerId:e.player_id,goals:e.goals,payment:e.payment_method,verified:e.verified,present:e.present
   }))
  }));
- const extras=checked(c,'Caixa').map((r:DBRow):CashExtra=>({id:r.id,date:r.entry_date,description:r.description,amount:r.amount_cents/100,method:r.payment_method}));
+ const extras=checked(c,'Caixa').map((r:DBRow):CashExtra=>({id:r.id,date:r.entry_date,description:r.description,amount:r.amount_cents/100,method:r.payment_method,type:r.entry_type||'income'}));
  return{players,rounds,extras,season:new Date().getFullYear()};
 }
 
@@ -45,7 +45,7 @@ export async function saveCloudData(owner:string,data:Data):Promise<void>{
  const extras=data.extras||[];
  if(extras.length)checkedWrite(await client.from('cash_entries').upsert(extras.map(x=>({
   id:x.id,owner_id:owner,entry_date:x.date,description:x.description,
-  amount_cents:cents(x.amount),payment_method:x.method
+  amount_cents:cents(x.amount),payment_method:x.method,entry_type:x.type||'income'
  }))), 'Salvar entradas do caixa');
  // Excluir registros removidos da UI, respeitando a ordem de dependências.
  const dbEntries=checked(await client.from('match_players').select('id,match_id,player_id').eq('owner_id',owner),'Conferir participantes');
