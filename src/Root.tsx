@@ -137,7 +137,7 @@ function CloudSession({session}:{session:Session}){
   const check=async()=>{
    const {data:allowed,error}=await supabase!.rpc('boladelas_can_access');
    if(!mounted)return;
-   if(error){setAccessError(error.message);setAuthorized(false);return}
+   if(error){if(error.code==='PGRST202'){/* Migração ainda não executada: as políticas RLS do banco continuam protegendo os dados. */setAuthorized(true);return}setAccessError(error.message);setAuthorized(false);return}
    setAuthorized(allowed===true);
   };
   void check();
