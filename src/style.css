@@ -38,3 +38,18 @@ button, input, textarea, select, a, label, .entry, .stepper, .payment, .bottom {
 .cloud-signout{display:flex;align-items:center;gap:6px;border:1px solid #e5eae3;border-radius:30px;background:#fff;color:#4e715a;padding:8px 12px;font-size:11px;font-weight:800;box-shadow:0 5px 20px #193f2420}
 .cloud-error{border:1px solid #e8bdb9;background:#fff4f2;color:#94322f;padding:12px;border-radius:12px;text-align:left;font-size:12px;font-weight:800;max-width:310px;display:flex;gap:8px}
 @media(max-width:760px){.auth-card{padding:26px 21px}.cloud-controls{bottom:86px}.cloud-signout{padding:7px 10px}}
+
+/* Caixa mobile e gerenciamento seguro */
+.cash-buttons{display:flex;gap:10px;flex-wrap:wrap;margin:-6px 0 20px}
+.cash-buttons>*{flex:1;min-height:48px}
+.cash-negative{color:#b14b49;font-weight:800;white-space:nowrap}
+.cash-positive{color:#42784f;font-weight:800;white-space:nowrap}
+.cash-type-options{display:flex;background:#edf2ec;border-radius:12px;padding:5px;margin-top:20px;gap:5px}
+.cash-type-options button{flex:1;border:0;border-radius:9px;padding:12px;background:transparent;color:#587963;font-weight:800}
+.cash-type-options button.active{background:#fff;color:#173b27;box-shadow:0 1px 5px #09341a12}
+.player-delete{display:grid;place-items:center;background:#fff;border:1px solid #e6eae6;border-radius:10px;color:#a45b56;min-width:42px;min-height:42px}
+.merge-suggestion{background:#f0f6ea;border-radius:13px;padding:14px;margin-top:17px;font-size:13px}
+.merge-suggestion p{font-size:13px;margin:8px 0;color:#54705d}
+.editor-actions>.danger{flex:1;border-radius:12px;background:#fff0ed;min-height:44px}
+.dialog label select{display:block;width:100%;padding:13px;margin-top:8px;border-radius:12px;border:1px solid #dce5dd;background:#fff}
+@media(max-width:760px){.cash-buttons{margin-top:5px}.cash-buttons .primary,.cash-buttons .secondary{padding:13px 10px;font-size:13px}.finance strong{font-size:13px}.rank .player-delete{margin-left:0}}
