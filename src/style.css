@@ -72,3 +72,12 @@ button, input, textarea, select, a, label, .entry, .stepper, .payment, .bottom {
 .offline-notice.has-error{background:#fff1ec;border-color:#f3cfca;color:#a33c33}
 .offline-notice.has-error .offline-notice-text span{color:#9b5a50}
 @media(max-width:760px){.offline-notice{margin:8px 14px 0;padding:11px 12px;gap:9px}.offline-notice-text strong{font-size:12px}}
+
+/* Primeiro acesso: usuário/senha; sem e-mail visível */
+.auth-hint{font-size:12px!important;color:#758477!important;margin:16px 0 0}
+.account-handoff{background:#f1f6ed;border:1px solid #e0eade;border-radius:14px;padding:16px;margin:18px 0}
+.account-handoff>strong{font-size:14px;color:#244f35}
+.account-handoff p{font-size:12px;color:#617769;line-height:1.55;margin:8px 0}
+.account-handoff label{display:block;font-weight:800;color:#486957;font-size:12px;margin-top:12px}
+.account-handoff input{display:block;width:100%;font-size:16px;margin-top:6px;border-radius:10px;background:#fff;border:1px solid #d8e5d5;padding:11px}
+.account-handoff .handoff-warning{font-size:11px;color:#9a6038}
