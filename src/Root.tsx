@@ -6,14 +6,45 @@ import {isSupabaseConfigured,supabase} from './lib/supabase';
 import {loadCloudData,saveCloudData} from './lib/cloud-data';
 import type {Data} from './model';
 import {readOffline,writeOffline} from './lib/offline';
+import {activationToken,loginIdentifier,usernameEmail,validateUsername} from './lib/username-auth';
 const empty=():Data=>({season:new Date().getFullYear(),players:[],rounds:[],extras:[]});
-function Login({onLogin}:{onLogin:()=>void}){
- const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const submit=async(e:React.FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{
-  const {error}=await supabase!.auth.signInWithPassword({email:email.trim(),password});
-  if(error)throw error;onLogin();
- }catch(err){setError(err instanceof Error?err.message:'Não foi possível entrar. Confira seus dados.')}finally{setBusy(false)}};
- return <div className="auth-screen"><form className="auth-card" onSubmit={submit}><img src="/icon.svg" alt="BolaDelas"/><span className="eyebrow">ACESSO DA ORGANIZADORA</span><h1>BolaDelas<span className="dot">.</span></h1><p>Entre para organizar os jogos, gols e pagamentos do time.</p><label>E-mail<input required type="email" autoComplete="username" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com"/></label><label>Senha<input required type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Sua senha"/></label>{error&&<p className="form-error" role="alert">{error}</p>}<button className="primary wide" disabled={busy}><LogIn size={18}/>{busy?'Entrando…':'Entrar'}</button><div className="auth-security"><LockKeyhole size={16}/> Acesso privado · Sem cadastro público</div></form></div>;
+function Login(){
+ const token=activationToken();
+ const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[done,setDone]=useState(false);
+ const register=Boolean(token);
+ const submit=async(e:React.FormEvent)=>{
+  e.preventDefault();if(!supabase)return;setBusy(true);setError('');
+  try{
+   if(register){
+    const nameError=validateUsername(username);
+    if(nameError)throw Error(nameError);
+    if(password.length<10)throw Error('Crie uma senha com pelo menos 10 caracteres.');
+    const {data,error:signupError}=await supabase.auth.signUp({
+      email:usernameEmail(username),password,
+      options:{data:{username:username.trim().toLowerCase()}}
+    });
+    if(signupError)throw signupError;
+    if(!data.session)throw Error('O Supabase pediu confirmação de e-mail. Desative Confirm Email no provedor Email antes de ativar esta conta.');
+    const claim=await supabase.rpc('boladelas_claim_handoff',{access_token:token});
+    if(claim.error)throw Error('A conta foi criada, mas o acesso não foi ativado: '+claim.error.message);
+    setDone(true);
+    window.history.replaceState(null,'',window.location.pathname+window.location.search);
+    window.location.reload();
+   }else{
+    const {error:loginError}=await supabase.auth.signInWithPassword({email:loginIdentifier(username),password});
+    if(loginError)throw loginError;
+   }
+  }catch(e){setError(e instanceof Error?e.message:'Não foi possível entrar. Confira os dados.')}
+  finally{setBusy(false)}
+ };
+ return <div className="auth-screen"><form className="auth-card" onSubmit={submit}><img src="/icon.svg" alt="BolaDelas"/><span className="eyebrow">{register?'SEU ACESSO AO TIME':'ACESSO DA ORGANIZADORA'}</span><h1>BolaDelas<span className="dot">.</span></h1><p>{register?'Escolha um nome de usuário e uma senha. Depois é só entrar e organizar o futebol.':'Entre com seu usuário e sua senha para continuar.'}</p>
+  <label>Nome de usuário<input required autoCapitalize="none" autoComplete="username" spellCheck={false} value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex.: larissa" /></label>
+  <label>{register?'Crie uma senha':'Senha'}<input required type="password" autoComplete={register?'new-password':'current-password'} minLength={register?10:undefined} value={password} onChange={e=>setPassword(e.target.value)} placeholder={register?'Pelo menos 10 caracteres':'Sua senha'}/></label>
+  {error&&<p className="form-error" role="alert">{error}</p>}
+  <button className="primary wide" disabled={busy||done}><LogIn size={18}/>{busy?'Aguarde…':register?'Criar meu acesso':'Entrar'}</button>
+  <div className="auth-security"><LockKeyhole size={16}/>{register?'Ativação única e privada':'Acesso exclusivo da organizadora'}</div>
+  {register&&<p className="auth-hint">Guarde seu usuário e senha. Como não usamos e-mail, a recuperação precisa ser feita pela responsável pelo sistema.</p>}
+ </form></div>;
 }
 function CloudSession({session}:{session:Session}){
  const owner=session.user.id;
@@ -154,5 +185,5 @@ export default function Root(){
  if(!isSupabaseConfigured)return <div className="auth-screen"><div className="auth-card"><ShieldCheck size={30}/><h2>Conexão não configurada</h2><p>Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY na Vercel para ativar o acesso privado.</p></div></div>;
  if(!ready)return <div className="auth-screen">Abrindo BolaDelas…</div>;
  if(authError&&!session)return <div className="auth-screen"><div className="auth-card"><h2>Não foi possível verificar o acesso</h2><p>{authError}</p><button className="primary wide" onClick={()=>location.reload()}>Tentar novamente</button></div></div>;
- return session?<CloudSession key={session.user.id} session={session}/>:<Login onLogin={()=>{}}/>;
+ return session?<CloudSession key={session.user.id} session={session}/>:<Login/>;
 }
