@@ -3,12 +3,13 @@ import {supabase} from './supabase';
 
 type DBRow=Record<string,any>;
 const checked=<T,>(result:{data:T|null;error:any},label:string):T=>{if(result.error)throw new Error(label+': '+result.error.message);if(result.data===null)throw new Error(label+': resposta vazia do banco');return result.data};
+export const checkedWrite=(result:{error:{message:string}|null},label:string):void=>{if(result.error)throw new Error(label+': '+result.error.message)};
 const cents=(n:number)=>Math.round(n*100);
 const trimRemote=async(table:string,owner:string,keep:string[])=>{
  const client=supabase!;
  const existing=checked((await client.from(table).select('id').eq('owner_id',owner)) as {data:DBRow[];error:any},table+' listar');
  const drop=existing.filter(x=>!keep.includes(x.id)).map(x=>x.id);
- if(drop.length)checked((await client.from(table).delete().eq('owner_id',owner).in('id',drop)) as {data:any;error:any},table+' excluir');
+ if(drop.length)checkedWrite((await client.from(table).delete().eq('owner_id',owner).in('id',drop)) as {data:any;error:any},table+' excluir');
 };
 export async function loadCloudData(owner:string):Promise<Data>{
  if(!supabase)throw Error('Supabase não configurado');
@@ -34,15 +35,15 @@ export async function saveCloudData(owner:string,data:Data):Promise<void>{
  if(!supabase)throw Error('Supabase não configurado');
  const client=supabase;
  // Escritas sequenciais respeitam as FKs. A fila do componente evita sobreposição.
- if(data.players.length)checked(await client.from('players').upsert(data.players.map(p=>({id:p.id,owner_id:owner,name:p.name,aliases:p.aliases}))), 'Salvar jogadoras');
- if(data.rounds.length)checked(await client.from('matches').upsert(data.rounds.map(r=>({id:r.id,owner_id:owner,played_on:r.date,fee_cents:cents(r.fee)}))), 'Salvar rodadas');
+ if(data.players.length)checkedWrite(await client.from('players').upsert(data.players.map(p=>({id:p.id,owner_id:owner,name:p.name,aliases:p.aliases}))), 'Salvar jogadoras');
+ if(data.rounds.length)checkedWrite(await client.from('matches').upsert(data.rounds.map(r=>({id:r.id,owner_id:owner,played_on:r.date,fee_cents:cents(r.fee)}))), 'Salvar rodadas');
  const entries=data.rounds.flatMap(r=>r.entries.map(e=>({
   owner_id:owner,match_id:r.id,player_id:e.playerId,present:e.present,goals:e.goals,
   payment_method:e.payment,verified:e.verified
  })));
- if(entries.length)checked(await client.from('match_players').upsert(entries,{onConflict:'match_id,player_id'}),'Salvar gols e pagamentos');
+ if(entries.length)checkedWrite(await client.from('match_players').upsert(entries,{onConflict:'match_id,player_id'}),'Salvar gols e pagamentos');
  const extras=data.extras||[];
- if(extras.length)checked(await client.from('cash_entries').upsert(extras.map(x=>({
+ if(extras.length)checkedWrite(await client.from('cash_entries').upsert(extras.map(x=>({
   id:x.id,owner_id:owner,entry_date:x.date,description:x.description,
   amount_cents:cents(x.amount),payment_method:x.method
  }))), 'Salvar entradas do caixa');
@@ -50,7 +51,7 @@ export async function saveCloudData(owner:string,data:Data):Promise<void>{
  const dbEntries=checked(await client.from('match_players').select('id,match_id,player_id').eq('owner_id',owner),'Conferir participantes');
  const validPairs=new Set(data.rounds.flatMap(r=>r.entries.map(e=>r.id+':'+e.playerId)));
  const expired=dbEntries.filter(x=>!validPairs.has(x.match_id+':'+x.player_id)).map(x=>x.id);
- if(expired.length)checked(await client.from('match_players').delete().eq('owner_id',owner).in('id',expired),'Excluir participantes');
+ if(expired.length)checkedWrite(await client.from('match_players').delete().eq('owner_id',owner).in('id',expired),'Excluir participantes');
  await trimRemote('matches',owner,data.rounds.map(r=>r.id));
  await trimRemote('players',owner,data.players.map(p=>p.id));
  await trimRemote('cash_entries',owner,extras.map(e=>e.id));
