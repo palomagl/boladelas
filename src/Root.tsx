@@ -133,17 +133,16 @@ function CloudSession({session}:{session:Session}){
  if(!data)return <div className="auth-screen"><div className="auth-card"><img src="/icon.svg" alt="BolaDelas"/><h2>Carregando teu time…</h2>{error&&<><p className="form-error" role="alert">{error}</p><button className="primary wide" onClick={retry}><RefreshCw size={17}/> Tentar novamente</button><button className="secondary wide" onClick={logout}>Sair</button></>}</div></div>;
  const status=pending ?(!online?'Sem internet · alterações salvas neste aparelho':busy?'Sincronizando alterações…':'Alterações aguardando envio')
    :!online?'Sem internet · últimas informações disponíveis':'Dados salvos no Supabase';
- return <>
-  <App remoteData={data} saveRemote={update} saveStatus={status} onLogout={()=>{void logout()}}/>
-  {(!online||pending||Boolean(error)||Boolean(storageError))&&
-   <div className={'offline-notice '+(!online?'is-offline':error||storageError?'has-error':'is-syncing')} role="status">
-    {(!online||error||storageError)?<WifiOff size={19}/>:pending?<CloudUpload size={19}/>:<CheckCircle2 size={19}/>}
-    <div className="offline-notice-text"><strong>{storageError?'Armazenamento indisponível':!online?'Sem conexão':error?'Problema ao sincronizar':busy?'Sincronizando…':'Aguardando envio'}</strong>
-     <span>{storageError||(!online?'Suas alterações serão guardadas neste aparelho e enviadas quando a internet voltar.':error||'As alterações serão enviadas automaticamente assim que a conexão estiver disponível.')}</span>
-    </div>
-    {online&&(pending||error)&&<button type="button" onClick={retry} disabled={busy} aria-label="Tentar sincronizar"><RefreshCw size={18}/></button>}
-   </div>}
- </>;
+ const notice=(!online||pending||Boolean(error)||Boolean(storageError))?
+  <div className={'offline-notice '+(!online?'is-offline':error||storageError?'has-error':'is-syncing')} role="status">
+   {(!online||error||storageError)?<WifiOff size={19}/>:pending?<CloudUpload size={19}/>:<CheckCircle2 size={19}/>}
+   <div className="offline-notice-text">
+    <strong>{storageError?'Armazenamento indisponível':!online?'Sem conexão':error?'Problema ao sincronizar':busy?'Sincronizando…':'Aguardando envio'}</strong>
+    <span>{storageError||(!online?'Suas alterações ficam salvas neste aparelho e serão enviadas quando a internet voltar.':error||'As alterações serão enviadas automaticamente assim que a conexão estiver disponível.')}</span>
+   </div>
+   {online&&(pending||error)&&<button type="button" onClick={retry} disabled={busy} aria-label="Tentar sincronizar"><RefreshCw size={18}/></button>}
+  </div>:null;
+ return <App remoteData={data} saveRemote={update} saveStatus={status} connectionNotice={notice} onLogout={()=>{void logout()}}/>;
 }
 export default function Root(){
  const [session,setSession]=useState<Session|null>(null),[ready,setReady]=useState(false),[authError,setAuthError]=useState('');
