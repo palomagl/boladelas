@@ -33,7 +33,7 @@ npm test
    Consulte `.env.example` para os nomes.
 7. Faça um novo deploy após ajustar as variáveis.
 
-**Estado atual:** com as variáveis Supabase configuradas, o aplicativo exige login e carrega/grava os registros nas tabelas remotas. Ainda é necessário validar os fluxos reais de criação, atualização e exclusão no Samsung. A sincronização offline confiável não foi implementada; não registre movimentações financeiras reais sem testar recuperação de dados e comportamento de rede.
+**Estado atual:** com as variáveis Supabase configuradas, o aplicativo exige login e carrega/grava os registros nas tabelas remotas. Ainda é necessário validar os fluxos reais de criação, atualização e exclusão no Samsung. Foi adicionada uma primeira sincronização offline por aparelho: após abrir com internet, alterações feitas sem conexão ficam pendentes no armazenamento local desta conta e são reenviadas ao reconectar. **Ainda é necessário validar no Samsung os cenários de queda de rede, recarregar página, sessão expirada, falta de espaço e alterações feitas em mais de um aparelho.** Não registre movimentações financeiras reais antes desses testes.
 
 ### Segurança
 
@@ -63,3 +63,13 @@ npm test
 7. Para sair da conta, use o ícone discreto de perfil no cabeçalho; não existe botão flutuante.
 
 Antes de entregar à organizadora, confirme que criar uma rodada fictícia, editar gols e pagamentos e atualizar a página mantém tudo salvo. Confira também se a Vercel mostra o deploy atual como `Ready`.
+
+## Modo offline (primeira implementação)
+
+- Abra o aplicativo **com internet pelo menos uma vez**, autentique e carregue os dados antes de ficar offline.
+- Durante a queda de conexão, o app mostra **Sem conexão** e guarda um snapshot local (armazenamento do navegador por UID), marcando os registros como pendentes.
+- Quando o navegador detectar internet novamente, tenta salvar os dados pendentes no Supabase. Caso haja erro, mantém a pendência e disponibiliza **Tentar sincronizar**.
+- **Não limpe os dados do site, não desinstale o PWA e não use navegação anônima** enquanto houver alterações pendentes.
+- O modo offline desta versão é pensado para **uma organizadora usando um único aparelho**. Atualizações simultâneas em aparelhos diferentes ainda não possuem resolução de conflitos e podem sobrescrever registros; é necessária uma arquitetura de sincronização incremental antes de usar em vários dispositivos.
+- Os dados no armazenamento do navegador não são criptografados por este projeto. Proteja o Samsung com bloqueio de tela e não compartilhe a sessão.
+- Se o login expirar sem internet, pode ser necessário reconectar para autenticar. É importante validar esses cenários antes da entrega.
