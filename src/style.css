@@ -53,3 +53,9 @@ button, input, textarea, select, a, label, .entry, .stepper, .payment, .bottom {
 .editor-actions>.danger{flex:1;border-radius:12px;background:#fff0ed;min-height:44px}
 .dialog label select{display:block;width:100%;padding:13px;margin-top:8px;border-radius:12px;border:1px solid #dce5dd;background:#fff}
 @media(max-width:760px){.cash-buttons{margin-top:5px}.cash-buttons .primary,.cash-buttons .secondary{padding:13px 10px;font-size:13px}.finance strong{font-size:13px}.rank .player-delete{margin-left:0}}
+
+/* Navegação mobile limpa: acesso à conta só pelo cabeçalho */
+.account-trigger{width:38px;height:38px;border:1px solid #e5ebe5;background:#fff;color:#4a7059;border-radius:12px;display:grid;place-items:center;flex-shrink:0;touch-action:manipulation}
+.account-logout{justify-content:center}
+.account-sheet{max-width:430px}
+@media(max-width:760px){.top{gap:9px}.top .pill{margin-left:auto}.account-trigger{width:36px;height:36px}.account-sheet{padding-bottom:max(25px,env(safe-area-inset-bottom))}}
