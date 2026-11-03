@@ -1,10 +1,11 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Session} from '@supabase/supabase-js';
-import {LogIn,LockKeyhole,RefreshCw,WifiOff,ShieldCheck} from 'lucide-react';
+import {LogIn,LockKeyhole,RefreshCw,WifiOff,ShieldCheck,CloudUpload,CheckCircle2} from 'lucide-react';
 import App from './App';
 import {isSupabaseConfigured,supabase} from './lib/supabase';
 import {loadCloudData,saveCloudData} from './lib/cloud-data';
 import type {Data} from './model';
+import {readOffline,writeOffline} from './lib/offline';
 const empty=():Data=>({season:new Date().getFullYear(),players:[],rounds:[],extras:[]});
 function Login({onLogin}:{onLogin:()=>void}){
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
@@ -16,24 +17,133 @@ function Login({onLogin}:{onLogin:()=>void}){
 }
 function CloudSession({session}:{session:Session}){
  const owner=session.user.id;
- const [data,setData]=useState<Data|null>(null),[error,setError]=useState(''),[sync,setSync]=useState<'ok'|'saving'|'failed'>('ok');
- const queue=useRef<Promise<void>>(Promise.resolve());
- const last=useRef<Data|null>(null);
- const alive=useRef(true);
- const load=useCallback(async()=>{setError('');try{const value=await loadCloudData(owner);if(alive.current){last.current=value;setData(value);setSync('ok')}}catch(e){if(alive.current)setError(e instanceof Error?e.message:'Erro ao carregar os dados')}},[owner]);
- useEffect(()=>{alive.current=true;void load();return()=>{alive.current=false}},[load]);
- const update=useCallback((value:Data)=>{
-  // Em caso de erro, a tela preserva as alterações locais; a usuária pode tentar novamente.
-  setData(value);last.current=value;setSync('saving');
-  queue.current=queue.current.catch(()=>{}).then(async()=>{
-   await saveCloudData(owner,value);
-   if(alive.current&&last.current===value)setSync('ok');
-  }).catch(e=>{if(alive.current){setError(e instanceof Error?e.message:'Falha ao salvar');setSync('failed')}});
+ const [data,setData]=useState<Data|null>(null);
+ const [online,setOnline]=useState(()=>navigator.onLine);
+ const [pending,setPending]=useState(false);
+ const [busy,setBusy]=useState(false);
+ const [error,setError]=useState('');
+ const [storageError,setStorageError]=useState('');
+ const dataRef=useRef<Data|null>(null);
+ const revision=useRef(0);
+ const pendingRef=useRef(false);
+ const running=useRef(false);
+ const active=useRef(true);
+
+ const showData=(value:Data,unsynced:boolean)=>{
+  dataRef.current=value;
+  pendingRef.current=unsynced;
+  setData(value);
+  setPending(unsynced);
+ };
+
+ // Salva snapshots completos em ordem, sem perder alterações feitas durante a sincronização.
+ const syncNow=useCallback(async()=>{
+  if(running.current||!navigator.onLine||!pendingRef.current||!dataRef.current)return;
+  running.current=true;setBusy(true);
+  try {
+   while(active.current&&navigator.onLine&&pendingRef.current&&dataRef.current){
+    const snapshot=dataRef.current;
+    const currentRevision=revision.current;
+    await saveCloudData(owner,snapshot);
+    if(currentRevision===revision.current){
+     // Só marcar como sincronizado depois de persistir esse estado inteiro.
+     writeOffline(owner,snapshot,false);
+     pendingRef.current=false;
+     setPending(false);
+     setError('');
+    }
+   }
+  } catch(e) {
+   // O snapshot local permanece pendente. Nunca limpar na falha.
+   if(active.current)setError(e instanceof Error?e.message:'Não foi possível sincronizar');
+  } finally {
+   running.current=false;
+   if(active.current)setBusy(false);
+  }
  },[owner]);
- const retry=()=>{if(last.current)update(last.current)};
- const logout=async()=>{if(sync==='saving'||sync==='failed'){if(!window.confirm('Existem alterações que podem não ter sido salvas. Deseja sair mesmo assim?'))return;}await supabase!.auth.signOut()};
- if(!data)return <div className="auth-screen"><div className="auth-card"><img src="/icon.svg" alt="BolaDelas"/><h2>Carregando teu time…</h2>{error&&<><p className="form-error">{error}</p><button className="primary wide" onClick={()=>void load()}><RefreshCw size={17}/> Tentar novamente</button><button className="secondary wide" onClick={logout}>Sair</button></>}</div></div>;
- return <><App remoteData={data} saveRemote={update} saveStatus={sync==='saving'?'Salvando alterações…':sync==='failed'?'Não foi possível sincronizar':'Dados salvos no Supabase'} onLogout={()=>{void logout()}}/><div className="cloud-controls">{sync==='failed'&&<button className="cloud-error" onClick={retry}><WifiOff size={17}/> Falha ao salvar: {error}. Tentar novamente</button>}</div></>;
+
+ const load=useCallback(async()=>{
+  setError('');
+  const cached=readOffline(owner);
+  if(cached?.pending){
+   // Nunca substituir edições locais ainda não enviadas por dados remotos antigos.
+   showData(cached.data,true);
+   if(navigator.onLine)void syncNow();
+   return;
+  }
+  if(cached&&!navigator.onLine){
+   showData(cached.data,false);
+   return;
+  }
+  if(!navigator.onLine){setError('Primeiro acesso offline: abra o aplicativo uma vez com internet para carregar o time.');return}
+  try {
+   const remote=await loadCloudData(owner);
+   if(!active.current)return;
+   // Se uma edição local surgiu durante a requisição, não sobrescrever.
+   if(pendingRef.current){void syncNow();return}
+   showData(remote,false);
+   try{writeOffline(owner,remote,false)}catch{setStorageError('O armazenamento deste aparelho está indisponível. Não será possível trabalhar sem internet.')}
+  } catch(e) {
+   if(!active.current)return;
+   if(cached){showData(cached.data,false);setError('Servidor indisponível. Exibindo último registro salvo neste aparelho.')}
+   else setError(e instanceof Error?e.message:'Não foi possível carregar os dados');
+  }
+ },[owner,syncNow]);
+
+ useEffect(()=>{
+  active.current=true;
+  const onOnline=()=>{setOnline(true);if(pendingRef.current)void syncNow();else if(!dataRef.current)void load()};
+  const onOffline=()=>setOnline(false);
+  const onVisibility=()=>{if(!document.hidden&&navigator.onLine&&pendingRef.current)void syncNow()};
+  window.addEventListener('online',onOnline);
+  window.addEventListener('offline',onOffline);
+  document.addEventListener('visibilitychange',onVisibility);
+  void load();
+  return()=>{
+   active.current=false;
+   window.removeEventListener('online',onOnline);
+   window.removeEventListener('offline',onOffline);
+   document.removeEventListener('visibilitychange',onVisibility);
+  };
+ },[load,syncNow]);
+
+ const update=(value:Data)=>{
+  try {
+   // Primeiro gravar localmente (sincronamente), depois mostrar a atualização.
+   writeOffline(owner,value,true);
+   setStorageError('');
+  }catch{
+   setStorageError('Não foi possível guardar as alterações neste aparelho. Libere espaço e tente novamente.');
+   return;
+  }
+  revision.current++;
+  showData(value,true);
+  setError('');
+  if(navigator.onLine)void Promise.resolve().then(syncNow);
+ };
+ const retry=()=>{setError('');if(pendingRef.current)void syncNow();else void load()};
+ const logout=async()=>{
+  if(pendingRef.current){
+   const allow=window.confirm('Existem alterações aguardando sincronização. Sair agora pode impedir o envio automático até entrar novamente nesta mesma conta e aparelho. Deseja sair?');
+   if(!allow)return;
+  }
+  await supabase!.auth.signOut();
+ };
+
+ if(!data)return <div className="auth-screen"><div className="auth-card"><img src="/icon.svg" alt="BolaDelas"/><h2>Carregando teu time…</h2>{error&&<><p className="form-error" role="alert">{error}</p><button className="primary wide" onClick={retry}><RefreshCw size={17}/> Tentar novamente</button><button className="secondary wide" onClick={logout}>Sair</button></>}</div></div>;
+ const status=pending ?(!online?'Sem internet · alterações salvas neste aparelho':busy?'Sincronizando alterações…':'Alterações aguardando envio')
+   :!online?'Sem internet · últimas informações disponíveis':'Dados salvos no Supabase';
+ return <>
+  <App remoteData={data} saveRemote={update} saveStatus={status} onLogout={()=>{void logout()}}/>
+  {(!online||pending||Boolean(error)||Boolean(storageError))&&
+   <div className={'offline-notice '+(!online?'is-offline':error||storageError?'has-error':'is-syncing')} role="status">
+    {(!online||error||storageError)?<WifiOff size={19}/>:pending?<CloudUpload size={19}/>:<CheckCircle2 size={19}/>}
+    <div className="offline-notice-text"><strong>{storageError?'Armazenamento indisponível':!online?'Sem conexão':error?'Problema ao sincronizar':busy?'Sincronizando…':'Aguardando envio'}</strong>
+     <span>{storageError||(!online?'Suas alterações serão guardadas neste aparelho e enviadas quando a internet voltar.':error||'As alterações serão enviadas automaticamente assim que a conexão estiver disponível.')}</span>
+    </div>
+    {online&&(pending||error)&&<button type="button" onClick={retry} disabled={busy} aria-label="Tentar sincronizar"><RefreshCw size={18}/></button>}
+   </div>}
+ </>;
 }
 export default function Root(){
  const [session,setSession]=useState<Session|null>(null),[ready,setReady]=useState(false),[authError,setAuthError]=useState('');
