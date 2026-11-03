@@ -1,7 +1,5 @@
 -- BolaDelas: entrega segura da conta da organizadora, sem exigir email na interface.
--- Execute depois de 20261103_single_admin.sql. Requer pgcrypto no schema extensions.
-create schema if not exists extensions;
-create extension if not exists pgcrypto with schema extensions;
+-- Execute depois de 20261103_single_admin.sql. Usa funções nativas do PostgreSQL.
 
 create table if not exists private.boladelas_handoffs (
  token_hash text primary key,
@@ -26,9 +24,9 @@ begin
   raise exception 'Acesso não autorizado';
  end if;
  delete from private.boladelas_handoffs where issued_by=current_user_id;
- secret_token := encode(extensions.gen_random_bytes(32),'hex');
+ secret_token := replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-','');
  insert into private.boladelas_handoffs(token_hash,issued_by,expires_at)
- values(encode(extensions.digest(secret_token,'sha256'),'hex'),current_user_id,now()+interval '24 hours');
+ values(encode(sha256(convert_to(secret_token,'UTF8')),'hex'),current_user_id,now()+interval '24 hours');
  return secret_token;
 end;
 $$;
@@ -48,7 +46,7 @@ begin
  if access_token is null or length(access_token)<>64 then raise exception 'Link de ativação inválido'; end if;
  select issued_by into issuer
  from private.boladelas_handoffs
- where token_hash=encode(extensions.digest(access_token,'sha256'),'hex')
+ where token_hash=encode(sha256(convert_to(access_token,'UTF8')),'hex')
   and redeemed_at is null and expires_at>now()
  for update;
  if issuer is null then raise exception 'Link expirado ou já utilizado'; end if;
@@ -57,7 +55,7 @@ begin
  if not found then raise exception 'Acesso anterior já foi transferido'; end if;
  update private.boladelas_handoffs
  set redeemed_at=now()
- where token_hash=encode(extensions.digest(access_token,'sha256'),'hex');
+ where token_hash=encode(sha256(convert_to(access_token,'UTF8')),'hex');
  return true;
 end;
 $$;
