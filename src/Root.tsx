@@ -48,6 +48,8 @@ function Login(){
 }
 function CloudSession({session}:{session:Session}){
  const owner=session.user.id;
+ const [authorized,setAuthorized]=useState<boolean|null>(null);
+ const [accessError,setAccessError]=useState('');
  const [data,setData]=useState<Data|null>(null);
  const [online,setOnline]=useState(()=>navigator.onLine);
  const [pending,setPending]=useState(false);
@@ -122,6 +124,18 @@ function CloudSession({session}:{session:Session}){
  },[owner,syncNow]);
 
  useEffect(()=>{
+  let mounted=true;
+  const check=async()=>{
+   const {data:allowed,error}=await supabase!.rpc('boladelas_can_access');
+   if(!mounted)return;
+   if(error){setAccessError(error.message);setAuthorized(false);return}
+   setAuthorized(allowed===true);
+  };
+  void check();
+  return()=>{mounted=false};
+ },[owner]);
+
+ useEffect(()=>{
   active.current=true;
   const onOnline=()=>{setOnline(true);if(pendingRef.current)void syncNow();else if(!dataRef.current)void load()};
   const onOffline=()=>setOnline(false);
@@ -129,14 +143,14 @@ function CloudSession({session}:{session:Session}){
   window.addEventListener('online',onOnline);
   window.addEventListener('offline',onOffline);
   document.addEventListener('visibilitychange',onVisibility);
-  void load();
+  if(authorized===true)void load();
   return()=>{
    active.current=false;
    window.removeEventListener('online',onOnline);
    window.removeEventListener('offline',onOffline);
    document.removeEventListener('visibilitychange',onVisibility);
   };
- },[load,syncNow]);
+ },[load,syncNow,authorized]);
 
  const update=(value:Data)=>{
   try {
@@ -161,6 +175,8 @@ function CloudSession({session}:{session:Session}){
   await supabase!.auth.signOut();
  };
 
+ if(authorized===null)return <div className="auth-screen"><div className="auth-card"><h2>Verificando acesso…</h2></div></div>;
+ if(authorized===false)return <div className="auth-screen"><div className="auth-card"><ShieldCheck size={30}/><h2>Conta sem acesso</h2><p>{accessError||'Esta conta ainda não está autorizada para o BolaDelas. Use o link de ativação enviado pela responsável.'}</p><button className="secondary wide" onClick={()=>void logout()}>Voltar ao login</button></div></div>;
  if(!data)return <div className="auth-screen"><div className="auth-card"><img src="/icon.svg" alt="BolaDelas"/><h2>Carregando teu time…</h2>{error&&<><p className="form-error" role="alert">{error}</p><button className="primary wide" onClick={retry}><RefreshCw size={17}/> Tentar novamente</button><button className="secondary wide" onClick={logout}>Sair</button></>}</div></div>;
  const status=pending ?(!online?'Sem internet · alterações salvas neste aparelho':busy?'Sincronizando alterações…':'Alterações aguardando envio')
    :!online?'Sem internet · últimas informações disponíveis':'Dados salvos no Supabase';
