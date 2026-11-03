@@ -3,11 +3,11 @@
 // O email não existe para envio de mensagens: não há recuperação por email.
 const USERNAME_RE=/^[a-z0-9_]{3,24}$/;
 export function normalizeUsername(input:string):string{
- return input.trim().toLowerCase();
+ return input.trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,'_');
 }
 export function validateUsername(input:string):string|null{
  const name=normalizeUsername(input);
- if(!USERNAME_RE.test(name))return 'Use de 3 a 24 caracteres: letras sem acento, números ou _.';
+ if(!USERNAME_RE.test(name))return 'Digite um nome de 3 a 24 caracteres. Pode usar espaços e acentos.';
  return null;
 }
 export function usernameEmail(input:string):string{
