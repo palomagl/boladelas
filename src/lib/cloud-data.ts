@@ -2,7 +2,7 @@ import type {Data, Entry, Player, Round, CashExtra} from '../model';
 import {supabase} from './supabase';
 
 type DBRow=Record<string,any>;
-const checked=<T,>(result:{data:T;error:any},label:string):T=>{if(result.error)throw new Error(label+': '+result.error.message);return result.data};
+const checked=<T,>(result:{data:T|null;error:any},label:string):T=>{if(result.error)throw new Error(label+': '+result.error.message);if(result.data===null)throw new Error(label+': resposta vazia do banco');return result.data};
 const cents=(n:number)=>Math.round(n*100);
 const trimRemote=async(table:string,owner:string,keep:string[])=>{
  const client=supabase!;
