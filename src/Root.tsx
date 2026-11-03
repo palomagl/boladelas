@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Session} from '@supabase/supabase-js';
-import {LogIn,LockKeyhole,LogOut,RefreshCw,WifiOff,ShieldCheck} from 'lucide-react';
+import {LogIn,LockKeyhole,RefreshCw,WifiOff,ShieldCheck} from 'lucide-react';
 import App from './App';
 import {isSupabaseConfigured,supabase} from './lib/supabase';
 import {loadCloudData,saveCloudData} from './lib/cloud-data';
@@ -33,7 +33,7 @@ function CloudSession({session}:{session:Session}){
  const retry=()=>{if(last.current)update(last.current)};
  const logout=async()=>{if(sync==='saving'||sync==='failed'){if(!window.confirm('Existem alterações que podem não ter sido salvas. Deseja sair mesmo assim?'))return;}await supabase!.auth.signOut()};
  if(!data)return <div className="auth-screen"><div className="auth-card"><img src="/icon.svg" alt="BolaDelas"/><h2>Carregando teu time…</h2>{error&&<><p className="form-error">{error}</p><button className="primary wide" onClick={()=>void load()}><RefreshCw size={17}/> Tentar novamente</button><button className="secondary wide" onClick={logout}>Sair</button></>}</div></div>;
- return <><App remoteData={data} saveRemote={update} saveStatus={sync==='saving'?'Salvando alterações…':sync==='failed'?'Não foi possível sincronizar':'Dados salvos no Supabase'}/><div className="cloud-controls">{sync==='failed'&&<button className="cloud-error" onClick={retry}><WifiOff size={17}/> Falha ao salvar: {error}. Tentar novamente</button>}<button className="cloud-signout" onClick={logout} aria-label="Sair da conta"><LogOut size={16}/> Sair</button></div></>;
+ return <><App remoteData={data} saveRemote={update} saveStatus={sync==='saving'?'Salvando alterações…':sync==='failed'?'Não foi possível sincronizar':'Dados salvos no Supabase'} onLogout={()=>{void logout()}}/><div className="cloud-controls">{sync==='failed'&&<button className="cloud-error" onClick={retry}><WifiOff size={17}/> Falha ao salvar: {error}. Tentar novamente</button>}</div></>;
 }
 export default function Root(){
  const [session,setSession]=useState<Session|null>(null),[ready,setReady]=useState(false),[authError,setAuthError]=useState('');
