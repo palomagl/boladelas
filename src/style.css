@@ -59,3 +59,16 @@ button, input, textarea, select, a, label, .entry, .stepper, .payment, .bottom {
 .account-logout{justify-content:center}
 .account-sheet{max-width:430px}
 @media(max-width:760px){.top{gap:9px}.top .pill{margin-left:auto}.account-trigger{width:36px;height:36px}.account-sheet{padding-bottom:max(25px,env(safe-area-inset-bottom))}}
+
+/* Estado offline leve, integrado ao layout; não cobre navegação ou controles */
+.offline-notice{display:flex;align-items:flex-start;gap:11px;margin:10px 5vw 0;padding:12px 14px;border-radius:13px;background:#edf4ec;border:1px solid #d4e3d5;color:#315c40;font-size:12px;line-height:1.45}
+.offline-notice>svg{flex-shrink:0;margin-top:2px}
+.offline-notice-text{display:grid;gap:3px;flex:1;min-width:0}
+.offline-notice-text strong{font-size:13px}
+.offline-notice-text span{color:#587361}
+.offline-notice button{align-self:center;display:grid;place-items:center;min-width:38px;min-height:38px;background:#fff;border:1px solid #d9e5db;border-radius:10px;color:#315c40}
+.offline-notice.is-offline{background:#fff4db;border-color:#f2deaa;color:#785a25}
+.offline-notice.is-offline .offline-notice-text span{color:#826b45}
+.offline-notice.has-error{background:#fff1ec;border-color:#f3cfca;color:#a33c33}
+.offline-notice.has-error .offline-notice-text span{color:#9b5a50}
+@media(max-width:760px){.offline-notice{margin:8px 14px 0;padding:11px 12px;gap:9px}.offline-notice-text strong{font-size:12px}}
