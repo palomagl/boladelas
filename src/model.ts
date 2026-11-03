@@ -9,7 +9,7 @@ export const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g
 export const parseNames=(source:string)=>[...new Map(source
  .split(/[\r\n;]+/)
  .map(line=>line
-   .replace(/^[\s\u200B\uFEFF]*(?:(?:\d{1,3}[\uFE0F\u20E3]?|[\u2776-\u2793])[\s]*[.)\-–—:]?[\s]*|[-*•✅☑️][\s]*)+/gu,'')
+   .replace(/^[\s\u200B\uFEFF]*(?:(?:\d{1,3}\uFE0F?\u20E3?|[\u2776-\u2793])[\s]*[.)\-–—:]?[\s]*|[-*•✅☑️][\s]*)+/gu,'')
    .replace(/^\s*(?:\d{1,3})\s+(?=\p{L})/u,'')
    .replace(/\s*\((?:confirmad[ao]|ok|pago|pix)\)\s*$/iu,'')
    .trim())
