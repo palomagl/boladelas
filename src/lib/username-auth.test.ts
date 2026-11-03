@@ -8,7 +8,13 @@ describe('acesso por usuário',()=>{
  it('rejeita nomes inseguros',()=>{
   expect(validateUsername('a')).not.toBeNull();
   expect(validateUsername('lara@teste')).not.toBeNull();
-  expect(validateUsername('nome com espaço')).not.toBeNull();
+  expect(validateUsername('nome com espaço')).toBeNull();
+  expect(validateUsername('nome@teste')).not.toBeNull();
+ });
+ it('permite nome completo com acentos sem exigir formatação',()=>{
+  expect(validateUsername('Silviane Gonçalves')).toBeNull();
+  expect(normalizeUsername('Silviane Gonçalves')).toBe('silviane_goncalves');
+  expect(loginIdentifier('Silviane Gonçalves')).toBe('silviane_goncalves@acesso.boladelas.example.com');
  });
  it('permite login da conta de teste com email, sem quebrar transição',()=>{
   expect(loginIdentifier('teste@exemplo.com')).toBe('teste@exemplo.com');
