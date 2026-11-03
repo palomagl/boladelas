@@ -2,7 +2,7 @@ export type Payment='pending'|'pix'|'cash';
 export type Player={id:string;name:string;aliases:string[]};
 export type Entry={playerId:string;goals:number;payment:Payment;verified:boolean;present:boolean};
 export type Round={id:string;date:string;fee:number;entries:Entry[];createdAt:string};
-export type CashExtra={id:string;date:string;description:string;amount:number;method:'pix'|'cash'};
+export type CashExtra={id:string;date:string;description:string;amount:number;method:'pix'|'cash';type?:'income'|'expense'};
 export type Data={players:Player[];rounds:Round[];season:number;extras?:CashExtra[]};
 export const id=()=>globalThis.crypto?.randomUUID?.()??Math.random().toString(36).slice(2);
 export const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]/g,'');
