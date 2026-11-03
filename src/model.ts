@@ -15,7 +15,7 @@ export const parseNames=(source:string)=>[...new Map(source
    .trim())
  .filter(Boolean)
  .map(name=>[normalize(name),name] as const)).values()];
-export const cleanPlayerName=(name:string)=>name.trim().replace(/^\\d{1,3}\\s*(?:[.)\\-–—:]\\s*|\\s+)(?=\\p{L})/u,'').trim();
+export const cleanPlayerName=(name:string)=>name.trim().replace(/^\d{1,3}\s*(?:[.)\-–—:]\s*|\s+)(?=\p{L})/u,'').trim();
 export const matchPlayer=(name:string,players:Player[])=>{
  const needle=normalize(cleanPlayerName(name));
  return players.find(p=>normalize(p.name)===needle||p.aliases.some(a=>normalize(a)===needle))
