@@ -73,3 +73,22 @@ Antes de entregar à organizadora, confirme que criar uma rodada fictícia, edit
 - O modo offline desta versão é pensado para **uma organizadora usando um único aparelho**. Atualizações simultâneas em aparelhos diferentes ainda não possuem resolução de conflitos e podem sobrescrever registros; é necessária uma arquitetura de sincronização incremental antes de usar em vários dispositivos.
 - Os dados no armazenamento do navegador não são criptografados por este projeto. Proteja o Samsung com bloqueio de tela e não compartilhe a sessão.
 - Se o login expirar sem internet, pode ser necessário reconectar para autenticar. É importante validar esses cenários antes da entrega.
+
+## Entrega à organizadora — nome de usuário e senha (sem pedir e-mail)
+
+**Fluxo da usuária:** ela abre um link especial do BolaDelas, escolhe um nome de usuário e uma senha e entra. Nas próximas vezes, acessa com o mesmo usuário e senha. Não precisa ir ao Supabase nem pedir uma conta por e-mail.
+
+**Configuração técnica única antes da entrega:**
+
+1. No Supabase → SQL Editor, execute `supabase/migrations/20261103_simple_username_handoff.sql`. Não precisa preencher UID ou senha.
+2. No Supabase → Authentication → Providers → Email, habilite temporariamente **Allow new users to sign up** e desative **Confirm Email**. Mantenha sign-in anônimo desativado. O cadastro pelo aplicativo usa um identificador interno em domínio reservado; não envia e-mail real.
+3. Depois que o deployment desta versão estiver **Ready** na Vercel, entre no BolaDelas com **a conta de teste que já está autorizada**, toque no pequeno ícone de conta → **Gerar link de ativação** → **Copiar link**.
+4. Envie somente esse link à organizadora (preferencialmente em conversa privada). Ele expira em 24 horas e só pode ser usado uma vez. Ela abre no próprio Samsung, escolhe usuário e senha e toca em **Criar meu acesso**.
+5. A função protegida do Supabase transfere a autorização exclusiva da conta de teste para a conta dela. A conta de teste perde acesso. Os registros de teste antigos **não são transferidos** (ela começa sem jogadoras e rodadas).
+6. **Depois que ela entrar e confirmar que funciona**, retorne ao Supabase e desative **Allow new users to sign up** novamente para impedir a criação de contas extras. O login da conta existente continua funcionando.
+
+**Por que há um link de ativação?** O aplicativo já possui uma conta administradora autorizada. Liberar o cadastro de qualquer pessoa para assumir o banco permitiria que um desconhecido criasse o primeiro usuário antes dela. O link protegido permite que a experiência da usuária tenha apenas dois campos, sem expor o acesso do time.
+
+**Segurança e recuperação:** a senha é gerenciada pelo Supabase Auth, nunca guardada no código ou enviada para a responsável. O sistema usa um endereço técnico interno baseado no nome escolhido; não existe caixa de e-mail para recuperar a senha automaticamente. Recomende gerenciador de senhas e bloqueio do celular. Se esquecer a senha depois de sair, será necessário um processo administrativo de recuperação — a recuperação por usuário, sem e-mail, ainda não foi implementada.
+
+**Não entregar antes de testar:** criação de conta, entrada após fechar/reabrir, persistência de gols e caixa, desconexão/reconexão e rejeição de conta não autorizada. O Supabase deve continuar com RLS ativo e uma única administradora.
