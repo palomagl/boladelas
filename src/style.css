@@ -25,3 +25,16 @@ button, input, textarea, select, a, label, .entry, .stepper, .payment, .bottom {
  input, textarea, select { font-size: 16px !important; }
  button { -webkit-tap-highlight-color: transparent; }
 }
+
+/* Acesso privado, sem cadastro público; telas leves para celular */
+.auth-screen{min-height:100dvh;display:grid;place-items:center;padding:22px;background:#f8faf7}
+.auth-card{background:#fff;border:1px solid #e2eae3;border-radius:22px;max-width:430px;width:100%;padding:30px;box-shadow:0 14px 45px #0d2c1910}
+.auth-card>img{width:64px;height:64px;margin-bottom:20px}.auth-card h1{font-size:2.8rem;margin:9px 0 12px}.auth-card p{color:#72887a;line-height:1.5;font-size:14px}
+.auth-card label{display:block;margin-top:18px;color:#3d6a4a;font-weight:800;font-size:13px}
+.auth-card input{display:block;margin-top:8px;width:100%;padding:15px;border-radius:12px;border:1px solid #dce6df;background:#fff;font-size:16px}
+.auth-security{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:25px;font-size:12px;color:#779181}
+.save-status{background:#e7f3df;color:#3d6147;font-size:11px;text-align:center;padding:5px 8px;font-weight:700}
+.cloud-controls{position:fixed;right:12px;bottom:85px;z-index:17;display:flex;align-items:end;gap:7px;flex-direction:column;max-width:calc(100vw - 24px)}
+.cloud-signout{display:flex;align-items:center;gap:6px;border:1px solid #e5eae3;border-radius:30px;background:#fff;color:#4e715a;padding:8px 12px;font-size:11px;font-weight:800;box-shadow:0 5px 20px #193f2420}
+.cloud-error{border:1px solid #e8bdb9;background:#fff4f2;color:#94322f;padding:12px;border-radius:12px;text-align:left;font-size:12px;font-weight:800;max-width:310px;display:flex;gap:8px}
+@media(max-width:760px){.auth-card{padding:26px 21px}.cloud-controls{bottom:86px}.cloud-signout{padding:7px 10px}}
