@@ -43,10 +43,19 @@ export async function saveCloudData(owner:string,data:Data):Promise<void>{
  })));
  if(entries.length)checkedWrite(await client.from('match_players').upsert(entries,{onConflict:'match_id,player_id'}),'Salvar gols e pagamentos');
  const extras=data.extras||[];
- if(extras.length)checkedWrite(await client.from('cash_entries').upsert(extras.map(x=>({
-  id:x.id,owner_id:owner,entry_date:x.date,description:x.description,
-  amount_cents:cents(x.amount),payment_method:x.method,entry_type:x.type||'income'
- }))), 'Salvar entradas do caixa');
+ if(extras.length){
+  const payload=extras.map(x=>({
+   id:x.id,owner_id:owner,entry_date:x.date,description:x.description,
+   amount_cents:cents(x.amount),payment_method:x.method,entry_type:x.type||'income'
+  }));
+  const response=await client.from('cash_entries').upsert(payload);
+  const missingColumn=response.error&&(response.error.code==='PGRST204'||response.error.code==='42703'||/entry_type.*(column|schema cache|does not exist)/i.test(response.error.message));
+  if(missingColumn){
+   if(payload.some(x=>x.entry_type==='expense'))throw new Error('Para salvar saídas, execute a migração 20261103_cash_expenses.sql no Supabase.');
+   const legacy=payload.map(({entry_type: _ignored,...row})=>row);
+   checkedWrite(await client.from('cash_entries').upsert(legacy),'Salvar entradas do caixa');
+  }else checkedWrite(response,'Salvar movimentações do caixa');
+ }
  // Excluir registros removidos da UI, respeitando a ordem de dependências.
  const dbEntries=checked(await client.from('match_players').select('id,match_id,player_id').eq('owner_id',owner),'Conferir participantes');
  const validPairs=new Set(data.rounds.flatMap(r=>r.entries.map(e=>r.id+':'+e.playerId)));
