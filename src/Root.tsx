@@ -19,12 +19,21 @@ function Login(){
     const nameError=validateUsername(username);
     if(nameError)throw Error(nameError);
     if(password.length<10)throw Error('Crie uma senha com pelo menos 10 caracteres.');
-    const {data,error:signupError}=await supabase.auth.signUp({
-      email:usernameEmail(username),password,
+    const email=usernameEmail(username);
+    const signup=await supabase.auth.signUp({
+      email,password,
       options:{data:{username:username.trim().toLowerCase()}}
     });
-    if(signupError)throw signupError;
-    if(!data.session)throw Error('O Supabase pediu confirmação de e-mail. Desative Confirm Email no provedor Email antes de ativar esta conta.');
+    let activatedSession=signup.data.session;
+    if(signup.error){
+      // Permite repetir a ativação se a conta já foi criada mas
+      // o resgate do link falhou por uma interrupção de conexão.
+      if(!(/already registered|already exists/i.test(signup.error.message)||signup.error.code==='user_already_exists'))throw signup.error;
+      const login=await supabase.auth.signInWithPassword({email,password});
+      if(login.error)throw login.error;
+      activatedSession=login.data.session;
+    }
+    if(!activatedSession)throw Error('O Supabase pediu confirmação de e-mail. Desative Confirm Email no provedor Email antes de ativar esta conta.');
     const claim=await supabase.rpc('boladelas_claim_handoff',{access_token:token});
     if(claim.error)throw Error('A conta foi criada, mas o acesso não foi ativado: '+claim.error.message);
     setDone(true);
