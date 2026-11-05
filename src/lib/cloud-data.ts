@@ -1,4 +1,4 @@
-import type {Data, Entry, Player, Round, CashExtra} from '../model';
+import type {Data, Entry, Player, Round, CashExtra, TeamNote} from '../model';
 import {supabase} from './supabase';
 
 type DBRow=Record<string,any>;
@@ -13,11 +13,12 @@ const trimRemote=async(table:string,owner:string,keep:string[])=>{
 };
 export async function loadCloudData(owner:string):Promise<Data>{
  if(!supabase)throw Error('Supabase não configurado');
- const [p,m,mp,c]=await Promise.all([
+ const [p,m,mp,c,n]=await Promise.all([
   supabase.from('players').select('*').eq('owner_id',owner),
   supabase.from('matches').select('*').eq('owner_id',owner),
   supabase.from('match_players').select('*').eq('owner_id',owner),
-  supabase.from('cash_entries').select('*').eq('owner_id',owner)
+  supabase.from('cash_entries').select('*').eq('owner_id',owner),
+  supabase.from('team_notes').select('*').eq('owner_id',owner)
  ]);
  const players=checked(p,'Jogadoras').map((r:DBRow):Player=>({id:r.id,name:r.name,aliases:r.aliases||[]}));
  const entries=checked(mp,'Gols');
@@ -28,7 +29,9 @@ export async function loadCloudData(owner:string):Promise<Data>{
   }))
  }));
  const extras=checked(c,'Caixa').map((r:DBRow):CashExtra=>({id:r.id,date:r.entry_date,description:r.description,amount:r.amount_cents/100,method:r.payment_method,type:r.entry_type||'income'}));
- return{players,rounds,extras,season:new Date().getFullYear()};
+ const tableMissing=(error:any)=>error&&(error.code==='PGRST205'||error.code==='42P01'||/team_notes.*(not find|does not exist|schema cache)/i.test(error.message||''));
+ const notes=tableMissing(n.error)?[]:checked(n,'Notas').map((r:DBRow):TeamNote=>({id:r.id,content:r.content,createdAt:r.created_at}));
+ return{players,rounds,extras,notes,season:new Date().getFullYear()};
 }
 
 export async function saveCloudData(owner:string,data:Data):Promise<void>{
@@ -56,6 +59,15 @@ export async function saveCloudData(owner:string,data:Data):Promise<void>{
    checkedWrite(await client.from('cash_entries').upsert(legacy),'Salvar entradas do caixa');
   }else checkedWrite(response,'Salvar movimentações do caixa');
  }
+ const notes=data.notes||[];
+ if(notes.length){
+  const result=await client.from('team_notes').upsert(notes.map(note=>({
+   id:note.id,owner_id:owner,content:note.content,created_at:note.createdAt
+  })));
+  if(result.error?.code==='PGRST205'||result.error?.code==='42P01')
+   throw new Error('Para salvar notas, execute a migração 20261105_team_notes.sql no Supabase.');
+  checkedWrite(result,'Salvar notas');
+ }
  // Excluir registros removidos da UI, respeitando a ordem de dependências.
  const dbEntries=checked(await client.from('match_players').select('id,match_id,player_id').eq('owner_id',owner),'Conferir participantes');
  const validPairs=new Set(data.rounds.flatMap(r=>r.entries.map(e=>r.id+':'+e.playerId)));
@@ -64,4 +76,5 @@ export async function saveCloudData(owner:string,data:Data):Promise<void>{
  await trimRemote('matches',owner,data.rounds.map(r=>r.id));
  await trimRemote('players',owner,data.players.map(p=>p.id));
  await trimRemote('cash_entries',owner,extras.map(e=>e.id));
+ try{await trimRemote('team_notes',owner,notes.map(n=>n.id))}catch(e){if(notes.length||!/team_notes.*(not find|does not exist|schema cache)/i.test(String(e)))throw e}
 }
