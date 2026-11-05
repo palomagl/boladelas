@@ -81,3 +81,21 @@ button, input, textarea, select, a, label, .entry, .stepper, .payment, .bottom {
 .account-handoff label{display:block;font-weight:800;color:#486957;font-size:12px;margin-top:12px}
 .account-handoff input{display:block;width:100%;font-size:16px;margin-top:6px;border-radius:10px;background:#fff;border:1px solid #d8e5d5;padding:11px}
 .account-handoff .handoff-warning{font-size:11px;color:#9a6038}
+
+/* Notas: lembretes simples no rodapé do Caixa */
+.team-notes{margin-top:18px}
+.team-notes-title{display:flex;align-items:center;gap:9px}
+.team-notes-title svg{color:#53765b;flex-shrink:0}
+.team-notes-subtitle{font-size:13px;color:#647a69;margin:0 0 14px}
+.team-notes-form textarea{display:block;resize:vertical;width:100%;min-height:90px;max-height:320px;border:1px solid #dce7dd;border-radius:12px;background:#fafcf9;padding:13px;color:#1d4230;font:inherit;font-size:16px;line-height:1.5;outline:none}
+.team-notes-form textarea:focus{border-color:#9cbd8e;box-shadow:0 0 0 3px #b4dcaa30}
+.team-notes-actions{display:flex;justify-content:flex-end;gap:9px;margin:10px 0 8px}
+.team-notes-actions button{min-height:42px}
+.team-notes-list{display:grid;gap:10px;margin-top:14px}
+.team-note{background:#f6f9f4;border:1px solid #e5eee4;border-radius:13px;padding:13px}
+.team-note p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55;color:#244937;margin:0 0 12px}
+.team-note-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.team-note-footer small{color:#7f9482;font-size:11px}
+.team-note-buttons{display:flex;align-items:center;gap:6px}
+.team-note-delete{width:37px;height:37px;display:grid;place-items:center;color:#ad5b56;background:white;border:1px solid #e8eae5;border-radius:10px}
+@media(max-width:760px){.team-notes{margin-bottom:10px}.team-notes-actions button{font-size:13px}}
